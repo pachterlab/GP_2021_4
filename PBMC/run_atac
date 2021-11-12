@@ -1,0 +1,18 @@
+#nohup $SCATAK_HOME/scATAK -module=quant -id=sample_sheet.csv -wlist=737K-cratac-v1.txt \ 
+#	-genome=/home/fgao/reference/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa \
+#	-gene=/home/fgao/reference/Homo_sapiens.GRCh38.101.chr.gtf \
+#	-bc=16 -bf=40 -t=8 > nohup_quant.txt 2>&1 &
+
+#nohup $SCATAK_HOME/scATAK -module=track -bg=seurat/bc_group.txt -bam=peak_calling/pbmc1.bam -genome=/home/fgao/reference/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa > nohup_track.txt 2>&1 &
+
+snakemake --cores 2 -s Snakefile_2cores
+snakemake --cores 4 -s Snakefile_4cores
+snakemake --cores 8 -s Snakefile_8cores
+
+
+nohup snakemake --cores 2 -s Snakefile_2cores_cellranger > nohup_cellranger_2cores.txt 2>&1 &
+nohup snakemake --cores 4 -s Snakefile_4cores_cellranger > nohup_cellranger_4cores.txt 2>&1 &
+nohup snakemake --cores 8 -s Snakefile_8cores_cellranger > nohup_cellranger_8cores.txt 2>&1 &
+
+cd scATAK_out_8cores 
+nohup $SCATAK_HOME/scATAK -module=track -bg=bc_group.txt -bam=peak_calling/pbmc1.bam -genome=/home/fgao/reference/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa > nohup_track.txt 2>&1 &

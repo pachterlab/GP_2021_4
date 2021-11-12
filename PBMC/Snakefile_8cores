@@ -1,0 +1,20 @@
+rule all:
+    input: "log/scATAK_log_8cores.txt"
+
+rule run_scATAK:
+    output:
+        "log/scATAK_log_8cores.txt"
+    benchmark:
+        "benchmarks/scATAK_8cores.txt"
+    shell:
+        """
+	 mkdir -p log
+         mkdir -p scATAK_out_8cores
+         cd scATAK_out_8cores
+         cp ../sample_sheet_benchmark.csv sample_sheet.csv
+         export SCATAK_HOME=/home/fgao/scATAK/
+         $SCATAK_HOME/scATAK -module=quant -id=sample_sheet.csv -wlist=737K-cratac-v1.txt -genome=/home/fgao/reference/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa -gene=/home/fgao/reference/Homo_sapiens.GRCh38.101.chr.gtf -bc=16 -bf=40 -t=8
+	 cd ..
+	 echo "scATAK pipeline is complete" > {output}
+        """
+

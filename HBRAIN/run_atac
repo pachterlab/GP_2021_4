@@ -5,4 +5,7 @@ nohup $SCATAK_HOME/scATAK -module=quant -id=sample_sheet.csv -wlist=737K-cratac-
 
 nohup $SCATAK_HOME/scATAK -module=track -bg=bc_group.txt -bam=peak_calling/HIP1.bam -genome=/home/fgao/reference/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa > nohup_track.txt 2>&1 &
 
+wget https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4441nnn/GSM4441836/suppl/GSM4441836_RCLN-HIPP-06-1516-X006-S05-B1-T1_H3K27ac.FitHiChIP.interactions.bed.gz
+gunzip GSM4441836_RCLN-HIPP-06-1516-X006-S05-B1-T1_H3K27ac.FitHiChIP.interactions.bed.gz
+awk '{if($25<0.05) print}' GSM4441836_RCLN-HIPP-06-1516-X006-S05-B1-T1_H3K27ac.FitHiChIP.interactions.bed > HIP1_interactions.bed
 nohup $SCATAK_HOME/scATAK -module=hic -bg=bc_group.txt -hic=HIP1_interactions.bedpe -bin=10000 -mtxdir=atac_regions/atac_HIP1 -t=80 > nohup_hic.txt 2>&1 &

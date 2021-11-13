@@ -24,7 +24,7 @@ nohup $SCATAK_HOME/scATAK -module=quant -id=sample_sheet.csv -wlist=737K-cratac-
        -gene=reference/Homo_sapiens.GRCh38.101.chr.gtf \
        -bc=16 -bf=40 -t=16 > nohup_quant.txt 2>&1 &
 ```
-#### 4) Run the R notebook `benchmark_scATAK_cellranger_PBMC.Rmd` for the secondary analysis and generate `bc_group.txt` file. 
+#### 4) Run the R notebook `benchmark_scATAK__hbrain.Rmd` for the secondary analysis and generate `bc_group.txt` file. 
 ####
 #### 5) Run the following command to generate cell-type specific ATAC-seq track files
 ```

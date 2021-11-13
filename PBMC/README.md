@@ -11,7 +11,7 @@ zcat atac_v1_pbmc_5k_S1_L001_R3_001.fastq.gz atac_v1_pbmc_5k_S1_L002_R3_001.fast
 mkdir fastq
 mv atac_v1_pbmc_5k*gz fastq/
 ```
-#### 2) Download reference genome fasta and gene gtf files for scATAK.
+#### 2) Download reference genome fasta and gene gtf files to `atac_v1_pbmc_5k_fastqs` directory for scATAK run.
 ```
 mkdir reference
 cd reference

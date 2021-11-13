@@ -20,7 +20,7 @@ wget http://ftp.ensembl.org/pub/release-101/fasta/homo_sapiens/dna/Homo_sapiens.
 gunzip *gz
 cd ..
 ```
-#### 2) Copy Snakemake files and other input files from this directory to `atac_v1_pbmc_5k_fastqs` directory. 
+#### 3) Copy Snakemake files and other input files from this directory to `atac_v1_pbmc_5k_fastqs` directory. 
 ####    Run the following commands for single-cell quantification using scATAK (2, 4, 8 threads).
 ```
 snakemake --cores 2 -s Snakefile_2cores
@@ -35,9 +35,9 @@ nohup snakemake --cores 4 -s Snakefile_4cores_cellranger > nohup_cellranger_4cor
 nohup snakemake --cores 8 -s Snakefile_8cores_cellranger > nohup_cellranger_8cores.txt 2>&1 &
 ```
 ####
-#### 3) Run the R notebook `benchmark_scATAK_cellranger_PBMC.Rmd` for the secondary analysis and generate `bc_group.txt` file. 
+#### 4) Run the R notebook `benchmark_scATAK_cellranger_PBMC.Rmd` for the secondary analysis and generate `bc_group.txt` file. 
 ####
-#### 4) Run the following command to generate cell-type specific ATAC-seq track files
+#### 5) Run the following command to generate cell-type specific ATAC-seq track files
 ```
 nohup $SCATAK_HOME/scATAK -module=track -bg=scATAK_out_8cores/bc_group.txt -bam=scATAK_out_8cores/peak_calling/pbmc1.bam -genome=reference/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa > nohup_track.txt 2>&1 &
 ```

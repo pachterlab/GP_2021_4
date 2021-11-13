@@ -13,7 +13,7 @@ rule run_scATAK:
          cd cellranger_out_2cores
          /home/fgao/software/cellranger-atac-1.2.0/cellranger-atac count --id=cellranger_pbmc \
                    --reference=/home/fgao/refdata-cellranger-atac-GRCh38-1.1.0 \
-                   --fastqs=/home/fgao/Data_single_ATAC/atac_v1_pbmc_5k_fastqs/fastq \
+                   --fastqs=../fastq \
                    --sample=atac_v1_pbmc_5k \
                    --localcores=2 \
                    --localmem=128

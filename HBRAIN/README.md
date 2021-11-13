@@ -28,6 +28,9 @@ nohup $SCATAK_HOME/scATAK -module=quant -id=sample_sheet.csv -wlist=737K-cratac-
 ####
 #### 5) Run the following command to generate cell-type specific ATAC-seq track files
 ```
-cd scATAK_out_8cores
-nohup $SCATAK_HOME/scATAK -module=track -bg=bc_group.txt -bam=peak_calling/pbmc1.bam -genome=../reference/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa > nohup_track.txt 2>&1 &
+nohup $SCATAK_HOME/scATAK -module=track -bg=bc_group.txt -bam=peak_calling/HIP1.bam -genome=reference/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa > nohup_track.txt 2>&1 &
+```
+#### 6) Run the following command for cell-type specific HiC interactome prediction
+```
+
 ```

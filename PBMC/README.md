@@ -21,7 +21,7 @@ wget http://ftp.ensembl.org/pub/release-101/fasta/homo_sapiens/dna/Homo_sapiens.
 gunzip *gz
 cd ..
 ```
-#### 2) Copy Snakemake files and other input files from this directory to `atac_v1_pbmc_5k_fastqs` directory, and modify the path . 
+#### 2) Copy Snakemake files and other input files from this directory to `atac_v1_pbmc_5k_fastqs` directory. 
 ####    Run the following commands for single-cell quantification using scATAK (2, 4, 8 threads).
 ```
 snakemake --cores 2 -s Snakefile_2cores

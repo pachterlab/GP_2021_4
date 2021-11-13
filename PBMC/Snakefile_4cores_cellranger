@@ -11,9 +11,9 @@ rule run_scATAK:
 	 mkdir -p log
          mkdir -p cellranger_out_4cores
          cd cellranger_out_4cores
-         /home/fgao/software/cellranger-atac-1.2.0/cellranger-atac count --id=cellranger_pbmc \
-                   --reference=/home/fgao/refdata-cellranger-atac-GRCh38-1.1.0 \
-                   --fastqs=/home/fgao/Data_single_ATAC/atac_v1_pbmc_5k_fastqs/fastq \
+         ../cellranger-atac-1.2.0/cellranger-atac count --id=cellranger_pbmc \
+                   --reference=../refdata-cellranger-atac-GRCh38-1.1.0 \
+                   --fastqs=../fastq \
                    --sample=atac_v1_pbmc_5k \
                    --localcores=4 \
                    --localmem=128

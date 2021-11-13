@@ -12,7 +12,7 @@ mkdir fastq
 mv atac_v1_pbmc_5k*gz fastq/
 ```
 
-#### 2) Copy Snakemake files and other input files from this directory to atac_v1_pbmc_5k_fastqs directory. 
+#### 2) Copy Snakemake files and other input files from this directory to **atac_v1_pbmc_5k_fastqs** directory. 
 ####    Run the following commands for single-cell quantification using scATAK (2, 4, 8 threads).
 ```
 snakemake --cores 2 -s Snakefile_2cores
@@ -25,3 +25,5 @@ nohup snakemake --cores 2 -s Snakefile_2cores_cellranger > nohup_cellranger_2cor
 nohup snakemake --cores 4 -s Snakefile_4cores_cellranger > nohup_cellranger_4cores.txt 2>&1
 nohup snakemake --cores 8 -s Snakefile_8cores_cellranger > nohup_cellranger_8cores.txt 2>&1
 ```
+####
+#### Run the R notebook **benchmark_scATAK_cellranger_PBMC.Rmd** for the secondary analysis and generate **bc_group.txt** file. 

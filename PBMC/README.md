@@ -39,5 +39,6 @@ nohup snakemake --cores 8 -s Snakefile_8cores_cellranger > nohup_cellranger_8cor
 ####
 #### 5) Run the following command to generate cell-type specific ATAC-seq track files
 ```
-nohup $SCATAK_HOME/scATAK -module=track -bg=scATAK_out_8cores/bc_group.txt -bam=scATAK_out_8cores/peak_calling/pbmc1.bam -genome=reference/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa > nohup_track.txt 2>&1 &
+cd scATAK_out_8cores
+nohup $SCATAK_HOME/scATAK -module=track -bg=bc_group.txt -bam=peak_calling/pbmc1.bam -genome=../reference/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa > nohup_track.txt 2>&1 &
 ```

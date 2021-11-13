@@ -27,7 +27,7 @@ snakemake --cores 2 -s Snakefile_2cores
 snakemake --cores 4 -s Snakefile_4cores
 snakemake --cores 8 -s Snakefile_8cores
 ```
-####    Download `cellranger-atac-1.2.0` and `refdata-cellranger-atac-GRCh38-1.2.0` from https://support.10xgenomics.com/single-cell-atac/software/downloads/1.2/ to `atac_v1_pbmc_5k_fastqs` and uncompress the tar.gz files.
+####    Download `cellranger-atac-1.2.0.tar.gz` and `refdata-cellranger-atac-GRCh38-1.2.0.tar.gz` from https://support.10xgenomics.com/single-cell-atac/software/downloads/1.2/ to `atac_v1_pbmc_5k_fastqs` and uncompress the tar.gz files.
 ####    Run the following commands for single-cell quantification using CellRanger (2, 4, 8 threads).
 ```
 nohup snakemake --cores 2 -s Snakefile_2cores_cellranger > nohup_cellranger_2cores.txt 2>&1 &

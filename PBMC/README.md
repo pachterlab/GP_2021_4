@@ -12,7 +12,16 @@ mkdir fastq
 mv atac_v1_pbmc_5k*gz fastq/
 ```
 
-#### 2) Copy Snakemake files and other input files from this directory to `atac_v1_pbmc_5k_fastqs` directory. 
+#### 2) Download reference genome fasta and gene gtf files.
+```
+mkdir reference
+cd reference
+wget http://ftp.ensembl.org/pub/release-101/gtf/homo_sapiens/Homo_sapiens.GRCh38.101.chr.gtf.gz
+wget http://ftp.ensembl.org/pub/release-101/fasta/homo_sapiens/dna/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa.gz
+gunzip *gz
+cd ..
+```
+#### 2) Copy Snakemake files and other input files from this directory to `atac_v1_pbmc_5k_fastqs` directory, and modify the path . 
 ####    Run the following commands for single-cell quantification using scATAK (2, 4, 8 threads).
 ```
 snakemake --cores 2 -s Snakefile_2cores
@@ -21,9 +30,14 @@ snakemake --cores 8 -s Snakefile_8cores
 ```
 ####    Run the following commands for single-cell quantification using CellRanger (2, 4, 8 threads).
 ```
-nohup snakemake --cores 2 -s Snakefile_2cores_cellranger > nohup_cellranger_2cores.txt 2>&1
-nohup snakemake --cores 4 -s Snakefile_4cores_cellranger > nohup_cellranger_4cores.txt 2>&1
-nohup snakemake --cores 8 -s Snakefile_8cores_cellranger > nohup_cellranger_8cores.txt 2>&1
+nohup snakemake --cores 2 -s Snakefile_2cores_cellranger > nohup_cellranger_2cores.txt 2>&1 &
+nohup snakemake --cores 4 -s Snakefile_4cores_cellranger > nohup_cellranger_4cores.txt 2>&1 &
+nohup snakemake --cores 8 -s Snakefile_8cores_cellranger > nohup_cellranger_8cores.txt 2>&1 &
 ```
 ####
-#### Run the R notebook `benchmark_scATAK_cellranger_PBMC.Rmd` for the secondary analysis and generate `bc_group.txt` file. 
+#### 3) Run the R notebook `benchmark_scATAK_cellranger_PBMC.Rmd` for the secondary analysis and generate `bc_group.txt` file. 
+####
+#### 4) Run the following command to generate cell-type specific ATAC-seq track files
+```
+nohup $SCATAK_HOME/scATAK -module=track -bg=scATAK_out_8cores/bc_group.txt -bam=scATAK_out_8cores/peak_calling/pbmc1.bam -genome=reference/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa > nohup_track.txt 2>&1 &
+```

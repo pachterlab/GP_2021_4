@@ -1,7 +1,7 @@
 ### This directory includes running scripts and a notebook to process 10X PBMC single-cell ATAC-seq data.
 ####
 #### 1) Download the raw data from 10X website.
-````
+```
 wget https://cg.10xgenomics.com/samples/cell-atac/1.1.0/atac_v1_pbmc_5k/atac_v1_pbmc_5k_fastqs.tar
 tar -xvf atac_v1_pbmc_5k_fastqs.tar
 cd atac_v1_pbmc_5k_fastqs

@@ -23,9 +23,9 @@ cd ..
 #### 3) Copy Snakemake files and `sample_sheet_benchmark.csv` from this directory to `atac_v1_pbmc_5k_fastqs` directory. 
 ####    Run the following command lines for single-cell quantification using scATAK (2, 4, 8 threads).
 ```
-nohup snakemake --cores 2 -s Snakefile_2cores > nohup_scatak_2cores.txt 2>&1 &
-nohup snakemake --cores 4 -s Snakefile_4cores > nohup_scatak_4cores.txt 2>&1 &
-nohup snakemake --cores 8 -s Snakefile_8cores > nohup_scatak_8cores.txt 2>&1 &
+nohup snakemake --cores 2 -s Snakefile_2cores_scatak > nohup_scatak_2cores.txt 2>&1 &
+nohup snakemake --cores 4 -s Snakefile_4cores_scatak > nohup_scatak_4cores.txt 2>&1 &
+nohup snakemake --cores 8 -s Snakefile_8cores_scatak > nohup_scatak_8cores.txt 2>&1 &
 ```
 ####    Download `cellranger-atac-1.2.0.tar.gz` and `refdata-cellranger-atac-GRCh38-1.2.0.tar.gz` from https://support.10xgenomics.com/single-cell-atac/software/downloads/1.2/ to `atac_v1_pbmc_5k_fastqs` and uncompress the tar.gz files.
 ####    Run the following command lines for single-cell quantification using CellRanger (2, 4, 8 threads).

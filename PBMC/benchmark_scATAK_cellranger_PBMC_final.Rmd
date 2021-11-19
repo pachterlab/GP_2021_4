@@ -1,0 +1,292 @@
+---
+title: "R Notebook for 10X single-cell ATAC-seq PBMC data"
+output: html_notebook
+---
+
+# Install necessary software packages
+```{r}
+
+#install.packages("Seurat")
+#install.packages("WGCNA")
+
+#if (!requireNamespace("BiocManager", quietly = TRUE))
+#    install.packages("BiocManager")
+#BiocManager::install("DropletUtils")
+#BiocManager::install("chromVAR")
+
+```
+
+
+# Define cell_selection function to make knee plot and remove empty droplets 
+```{r}
+
+library(dplyr)
+library(DropletUtils)
+library(Matrix)
+
+cell_selection <- function(dir, mtx, feature, bc, method) {
+  data.mtx<-readMM(paste(dir, mtx, sep=""))
+  feature<-read.table(paste(dir, feature, sep=""), header=F)
+  bc<-read.table(paste(dir, bc, sep=""), header=F)
+  set.seed(100)
+  
+  if (method=="cellranger") {
+    colnames(data.mtx)<-gsub('-.*', '', bc$V1)
+    rownames(data.mtx)<-paste(feature$V1, ":", feature$V2, "-", feature$V3, sep="")
+    br.out <- barcodeRanks(data.mtx)
+    e.out <- emptyDrops(data.mtx)
+  } else {
+    rownames(data.mtx)<-bc$V1
+    colnames(data.mtx)<-feature$V1
+    br.out <- barcodeRanks(t(data.mtx))
+    e.out <- emptyDrops(t(data.mtx))
+  }
+  
+  is.cell <- e.out$FDR <= 1e-5
+  sum(is.cell, na.rm=TRUE)
+  e.out_sel<-e.out[(!is.na(e.out$FDR) & e.out$FDR<=1e-5),]
+  if (method=="cellranger") {
+    data.mtx_sel <- as.data.frame(as.matrix(data.mtx[,rownames(e.out_sel)]))
+  } else {
+    data.mtx_sel <- as.data.frame(as.matrix(data.mtx[rownames(e.out_sel),]))
+  }
+  
+  return(list("bc_rank"=br.out, "mtx_sel"=data.mtx_sel))
+}
+
+
+```
+
+
+
+# Download the matrices; Remove empty droplets from scATAK peak count matrix and Cell Rangeer peak count matrix
+```{r, include=FALSE}
+
+system("wget https://data.caltech.edu/tindfiles/serve/1d4dd6b1-c360-41e4-bf7e-a01686b376e5/", ignore.stdout = TRUE)
+system("mv index.html mtx_data_pbmc.tar.gz", ignore.stdout = TRUE)
+system("tar -xvzf mtx_data_pbmc.tar.gz", ignore.stdout = TRUE)
+
+dir1<-"./mtx_data_pbmc/atac_regions/atac_pbmc1/"
+mtx<-"atac.mtx"
+feature<-"atac.genes.txt"
+bc<-"atac.barcodes.txt"
+scatak_peak_sel<-cell_selection(dir1, mtx, feature, bc, "scatak")
+
+dir2<-"./mtx_data_pbmc/raw_peak_bc_matrix/"
+mtx<-"matrix.mtx"
+feature<-"peaks.bed"
+bc<-"barcodes.tsv"
+cellranger_peak_sel<-cell_selection(dir2, mtx, feature, bc, "cellranger")
+
+```
+
+
+
+#Generate a knee plot
+```{r}
+
+bc_scatak.out<-data.frame(scatak_peak_sel$bc_rank)
+bc_cellranger.out<-data.frame(cellranger_peak_sel$bc_rank)
+bc_scatak.out$method<-"scATAK"
+bc_cellranger.out$method<-"Cell Ranger"
+  
+bc.out<-rbind(bc_scatak.out, bc_cellranger.out)
+
+# Making a knee plot.
+figure2_p1<-ggplot(bc.out, aes(rank, total, fill=method)) + geom_line(aes(colour=method)) + scale_x_continuous(trans='log10') + 
+  scale_y_continuous(trans='log10') + xlab("Barcode") + ylab("Count") + ggtitle("") +
+  geom_hline(aes(yintercept=metadata(scatak_peak_sel$bc_rank)$knee), linetype='dotted', col = 'darkblue', size=1) +
+  geom_hline(aes(yintercept=metadata(cellranger_peak_sel$bc_rank)$knee), linetype='dotted', col = 'darkred', size=1) +
+  geom_hline(aes(yintercept=metadata(scatak_peak_sel$bc_rank)$inflection), linetype='dotted', col = 'cyan', size=1) +
+  geom_hline(aes(yintercept=metadata(cellranger_peak_sel$bc_rank)$inflection), linetype='dotted', col = 'orange', size=1) 
+
+figure2_p1
+```
+
+
+
+# Find overlap barcode list and subset scATAK and cellranger peak matrices. Create Seurat objects and run dimension reduction using LSI
+```{r, include=FALSE}
+
+atac.merge_sel <- merge(scatak_peak_sel$mtx_sel, t(cellranger_peak_sel$mtx_sel), by=0)
+nrow(scatak_peak_sel$mtx_sel)  #scATAK 3595 cells
+nrow(t(cellranger_peak_sel$mtx_sel)) #cellranger 3653 cells
+nrow(atac.merge_sel) #overlap 3528 cells
+
+atac_scatak.merge_sel <-atac.merge_sel[,c(2:(ncol(scatak_peak_sel$mtx_sel)+1))]
+atac_cellranger.merge_sel <-atac.merge_sel[,c((ncol(scatak_peak_sel$mtx_sel)+2):ncol(atac.merge_sel))]
+rownames(atac_scatak.merge_sel) <- atac.merge_sel$Row.names
+rownames(atac_cellranger.merge_sel) <- atac.merge_sel$Row.names
+
+atac_pbmc_scatak <- CreateSeuratObject(counts = t(atac_scatak.merge_sel), assay = "scATAK", project = "10x_ATAC")
+atac_pbmc_cellranger <- CreateSeuratObject(counts = t(atac_cellranger.merge_sel), assay = "Cellranger", project = "10x_ATAC")
+
+#only use regions detected in more than 10% cells as variable regions
+VariableFeatures(atac_pbmc_scatak) <- names(which(colSums(atac_scatak.merge_sel > 0) > 352))
+atac_pbmc_scatak <- RunLSI(atac_pbmc_scatak, n = 50, scale.max = NULL)
+atac_pbmc_scatak <- RunUMAP(atac_pbmc_scatak, reduction = "lsi", dims = 1:50)
+
+VariableFeatures(atac_pbmc_cellranger) <- names(which(colSums(atac_cellranger.merge_sel > 0) > 352))
+atac_pbmc_cellranger <- RunLSI(atac_pbmc_cellranger, n = 50, scale.max = NULL)
+atac_pbmc_cellranger <- RunUMAP(atac_pbmc_cellranger, reduction = "lsi", dims = 1:50)
+
+atac_pbmc_scatak <- FindNeighbors(object = atac_pbmc_scatak, reduction = 'lsi', dims = 1:50)
+atac_pbmc_scatak <- FindClusters(object = atac_pbmc_scatak, verbose = FALSE, resolution = 0.4)
+
+atac_pbmc_cellranger <- FindNeighbors(object = atac_pbmc_cellranger, reduction = 'lsi', dims = 1:50)
+atac_pbmc_cellranger <- FindClusters(object = atac_pbmc_cellranger, verbose = FALSE, resolution = 0.3)
+
+figure2_p2<-DimPlot(object = atac_pbmc_scatak, label = TRUE) + NoLegend() + ggtitle("scATAK")
+figure2_p3<-DimPlot(object = atac_pbmc_cellranger, label = TRUE) + NoLegend() + ggtitle("Cell Ranger")
+
+```
+
+
+# Show overlap statistics of cell clusters from scATAK and Cellranger 
+```{r}
+library(WGCNA)
+table_overlap<-overlapTable(atac_pbmc_scatak@meta.data$seurat_clusters, atac_pbmc_cellranger@meta.data$seurat_clusters)
+
+p_overlap <- round(-log10(table_overlap$pTable), digits=4)
+p_overlap[is.infinite(p_overlap)] <- 100
+p_overlap[p_overlap>100] <- 100
+
+library(ggplot2)
+
+library(reshape2)
+
+p_data<-melt(p_overlap)
+colnames(p_data)<-c("scATAK", "Cell_Ranger", "p_value")
+p_data$scATAK<-as.factor(p_data$scATAK)
+p_data$Cell_Ranger<-as.factor(p_data$Cell_Ranger)
+figure2_p4<-ggplot(p_data, aes(scATAK, Cell_Ranger, fill =p_value)) + geom_tile() + scale_fill_gradient(low="white", high="red") + 
+  ggtitle("Overlap statistics of clustered cells")
+
+# Generate Figure2 panels A,B,C,D
+library(cowplot)
+plot_grid(figure2_p1, figure2_p4, labels=c("A", "B"), ncol=2) -> figure2_upper
+plot_grid(figure2_p2, figure2_p3, labels=c("C", "D"), ncol=2) -> figure2_middle
+plot_grid(figure2_upper, figure2_middle, nrow=2)              
+
+```
+
+
+# Gene count processing
+```{r}
+
+dir3<-"./mtx_data_pbmc/atac_genes/atac_pbmc1/"
+scatak_gene.mtx<-readMM(paste(dir3, "gene.mtx", sep=""))
+feature<-read.table(paste(dir3, "gene.genes.txt", sep=""), header=F)
+bc<-read.table(paste(dir3, "gene.barcodes.txt",sep=""), header=F)
+rownames(scatak_gene.mtx)<-bc$V1
+colnames(scatak_gene.mtx)<-feature$V1
+scatak_gene.mtx_sel<-scatak_gene.mtx[rownames(atac_scatak.merge_sel),]
+gene_scatak.merge_sel<-data.frame(scatak_gene.mtx_sel)
+
+```
+
+
+```{r}
+
+sig_genes<-c("IL7R", "CD8A", "MS4A1", "NCR1", "MS4A7", "ITGAM")
+
+atac_pbmc_scatak <- AddMetaData(atac_pbmc_scatak, gene_scatak.merge_sel[,sig_genes], sig_genes)
+
+figure2_p5<-VlnPlot(atac_pbmc_scatak, features = sig_genes, pt.size=0, ncol=2)
+
+figure2_p5
+
+```
+
+
+#chromVAR motif analysis
+```{r,  include=FALSE}
+
+library(chromVAR)
+
+dir4<-"./mtx_data_pbmc/atac_regions/"
+seq_all = Biostrings::readDNAStringSet(paste(dir4, "atac_all_peaks.fa", sep=""))
+
+dir1<-"./mtx_data_pbmc/atac_regions/atac_pbmc1/"
+mtx_all<-readMM(paste(dir1, "atac.mtx", sep=""))
+feature<-read.table(paste(dir1, "atac.genes.txt", sep=""), header=F)
+bc<-read.table(paste(dir1, "atac.barcodes.txt", sep=""), header=F)
+colnames(mtx_all)<-feature$V1
+rownames(mtx_all)<-bc$V1
+
+#Select 3528 barcodes used in Seurat analysis 
+mtx_bc <- mtx_all[colnames(atac_pbmc_scatak), ]
+
+#select regions detected in at least 1 cell
+mtx_sel <- mtx_bc[, colSums(mtx_bc)>0]
+seq_sel <- seq_all[colnames(mtx_sel)]
+
+motifs <- getJasparMotifs(species = "Homo sapiens", collection = "CORE")
+library(motifmatchr)
+motif_sel <- matchMotifs(motifs, seq_sel) 
+motifMatches(motif_sel)[1:4,1:4]
+
+library(SummarizedExperiment)
+
+peak_chromVAR <- SummarizedExperiment(assays =  list(counts = as.matrix(t(mtx_sel))))
+
+library(Biostrings)
+peak_bias<-letterFrequency(seq_sel, "GC")/width(seq_sel)
+bg<-getBackgroundPeaks(peak_chromVAR, bias=peak_bias, niterations = 50,  w = 0.1, bs = 50)
+
+dev <- computeDeviations(object = peak_chromVAR, annotations = motifMatches(motif_sel), background_peaks = bg)
+variability <- computeVariability(dev)
+plotVariability(variability, use_plotly = FALSE) 
+assays(dev)$z[1:4,1:4]
+tf_mtx<-t(assays(dev)$z)
+
+atac_pbmc_scatak_tf <- CreateSeuratObject(counts = t(tf_mtx), assay = "scATAK_TF", project = "10x_ATAC")
+Idents(atac_pbmc_scatak_tf)<-Idents(atac_pbmc_scatak)
+
+signature_top5<-NULL
+
+for (i in seq(0,9,1))
+{ 
+  cluster_signature <- FindMarkers(object = atac_pbmc_scatak_tf, ident.1 = i, only.pos = TRUE, test.use = "wilcox")
+  cluster_signature_sig <- cluster_signature[cluster_signature$p_val_adj<0.05,]
+  write.table(cluster_signature_sig, paste("./marker_TF_", i, ".txt", sep=""), quote=F, sep="\t")
+}
+
+atac_pbmc_scatak@meta.data = cbind(atac_pbmc_scatak@meta.data, tf_mtx)
+
+figure2_p6<-FeaturePlot(atac_pbmc_scatak, "MA0824.1_ID4", cols = c("white", "lightgrey", "red"))
+figure2_p6
+
+```
+
+
+
+```{r}
+
+new.cluster.ids <- c("Monocytes", "T-cells", "T-cells", "T-cells", "T-cells", "B-cells", "NK-cells", "Monocytes", "T-cells", "Dendritic")
+names(new.cluster.ids) <- levels(atac_pbmc_scatak)
+atac_pbmc_scatak <- RenameIdents(atac_pbmc_scatak, new.cluster.ids)
+DimPlot(atac_pbmc_scatak, reduction = "umap", label = TRUE, pt.size = 0.5, label.size=6) + NoLegend()
+
+```
+
+
+# Generate barcode-group table
+```{r}
+
+bc_group<-data.frame(Barcodes=colnames(atac_pbmc_scatak), Groups=Idents(atac_pbmc_scatak))
+
+write.table(bc_group, file= "./bc_group.txt", quote=F, row.names=F)
+  
+```
+
+# Generate Figure2
+```{r}
+png("Figure2.png", width=800, height=900)
+plot_grid(figure2_p1, figure2_p4, labels=c("A", "B"), ncol=2, label_size = 20) -> figure2_upper
+plot_grid(figure2_p2, figure2_p3, labels=c("C", "D"), ncol=2, label_size = 20) -> figure2_middle
+plot_grid(figure2_p5, figure2_p6, labels=c("E", "F"), ncol=2, label_size = 20) -> figure2_bottom
+plot_grid(figure2_upper, figure2_middle, figure2_bottom, nrow=3)              
+dev.off()
+```
+

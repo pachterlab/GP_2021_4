@@ -20,7 +20,7 @@ wget http://ftp.ensembl.org/pub/release-101/fasta/homo_sapiens/dna/Homo_sapiens.
 gunzip *gz
 cd ..
 ```
-#### 3) Copy Snakemake files and `sample_sheet_benchmark.csv` from this directory to `atac_v1_pbmc_5k_fastqs` directory. 
+#### 3) Copy Snakemake files and `sample_sheet_benchmark.csv` from `preprocessing` directory to `atac_v1_pbmc_5k_fastqs` directory. 
 ####    Run the following command lines for single-cell quantification using scATAK (2, 4, 8 threads).
 ```
 nohup snakemake --cores 2 -s Snakefile_2cores_scatak > nohup_scatak_2cores.txt 2>&1 &

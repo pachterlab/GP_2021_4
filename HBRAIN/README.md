@@ -26,11 +26,11 @@ nohup $SCATAK_HOME/scATAK -module=quant -id=sample_sheet.csv -wlist=737K-cratac-
 ```
 #### 4) Run the R notebook `benchmark_scATAK__hbrain.Rmd` for the secondary analysis and generate `bc_group.txt` file. 
 ####
-#### 5) Run the following command line to generate cell-type specific ATAC-seq track files
+#### 5) Run the following command line to generate cell-type-specific ATAC-seq track files
 ```
 nohup $SCATAK_HOME/scATAK -module=track -bg=bc_group.txt -bam=peak_calling/HIP1.bam -genome=reference/Homo_sapiens.GRCh38.dna_rm.primary_assembly.fa > nohup_track.txt 2>&1 &
 ```
-#### 6) Run the following command line for cell-type specific HiChIP interactome prediction
+#### 6) Run the following command line for cell-type-specific HiChIP interactome prediction
 ```
 wget https://ftp.ncbi.nlm.nih.gov/geo/samples/GSM4441nnn/GSM4441836/suppl/GSM4441836_RCLN-HIPP-06-1516-X006-S05-B1-T1_H3K27ac.FitHiChIP.interactions.bed.gz
 gunzip GSM4441836_RCLN-HIPP-06-1516-X006-S05-B1-T1_H3K27ac.FitHiChIP.interactions.bed.gz

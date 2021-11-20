@@ -35,7 +35,7 @@ nohup snakemake --cores 4 -s Snakefile_4cores_cellranger > nohup_cellranger_4cor
 nohup snakemake --cores 8 -s Snakefile_8cores_cellranger > nohup_cellranger_8cores.txt 2>&1 &
 ```
 ####
-#### 4) Run the R notebook `benchmark_scATAK_cellranger_PBMC.Rmd` for the secondary analysis and generate `bc_group.txt` file. 
+#### 4) Run the R notebook `benchmark_scATAK_cellranger_PBMC_final.Rmd` for the secondary analysis and generate `bc_group.txt` file. 
 ####
 #### 5) Run the following command line to generate cell-type specific ATAC-seq track files
 ```

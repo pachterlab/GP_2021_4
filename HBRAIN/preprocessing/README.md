@@ -16,7 +16,7 @@ wget http://ftp.ensembl.org/pub/release-101/fasta/homo_sapiens/dna/Homo_sapiens.
 gunzip *gz
 cd ..
 ```
-#### 3) Copy Snakemake files and `sample_sheet.csv` from this directory to `GSM4441823_HIP` directory. 
+#### 3) Copy Snakemake files and `sample_sheet.csv` from `preprocessing` directory to `GSM4441823_HIP` directory. 
 ####    Run the following command line for single-cell quantification using scATAK.
 ```
 nohup $SCATAK_HOME/scATAK -module=quant -id=sample_sheet.csv -wlist=737K-cratac-v1.txt \

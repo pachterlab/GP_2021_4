@@ -18,7 +18,7 @@ output: html_notebook
 
 
 # Define cell_selection function to make knee plot and remove empty droplets 
-```{r}
+```{r, include=FALSE}
 
 library(dplyr)
 library(DropletUtils)
@@ -92,6 +92,7 @@ bc_cellranger.out$method<-"Cell Ranger"
   
 bc.out<-rbind(bc_scatak.out, bc_cellranger.out)
 
+library(ggplot2)
 # Making a knee plot.
 figure2_p1<-ggplot(bc.out, aes(rank, total, fill=method)) + geom_line(aes(colour=method)) + scale_x_continuous(trans='log10') + 
   scale_y_continuous(trans='log10') + xlab("Barcode") + ylab("Count") + ggtitle("") +
@@ -101,13 +102,15 @@ figure2_p1<-ggplot(bc.out, aes(rank, total, fill=method)) + geom_line(aes(colour
   geom_hline(aes(yintercept=metadata(cellranger_peak_sel$bc_rank)$inflection), linetype='dotted', col = 'orange', size=1) 
 
 figure2_p1
+
 ```
 
 
 
 # Find overlap barcode list and subset scATAK and cellranger peak matrices. Create Seurat objects and run dimension reduction using LSI
 ```{r, include=FALSE}
-
+library(Seurat)
+set.seed(1234)
 atac.merge_sel <- merge(scatak_peak_sel$mtx_sel, t(cellranger_peak_sel$mtx_sel), by=0)
 nrow(scatak_peak_sel$mtx_sel)  #scATAK 3595 cells
 nrow(t(cellranger_peak_sel$mtx_sel)) #cellranger 3653 cells
@@ -136,37 +139,25 @@ atac_pbmc_scatak <- FindClusters(object = atac_pbmc_scatak, verbose = FALSE, res
 atac_pbmc_cellranger <- FindNeighbors(object = atac_pbmc_cellranger, reduction = 'lsi', dims = 1:50)
 atac_pbmc_cellranger <- FindClusters(object = atac_pbmc_cellranger, verbose = FALSE, resolution = 0.3)
 
-figure2_p2<-DimPlot(object = atac_pbmc_scatak, label = TRUE) + NoLegend() + ggtitle("scATAK")
-figure2_p3<-DimPlot(object = atac_pbmc_cellranger, label = TRUE) + NoLegend() + ggtitle("Cell Ranger")
+umap_scatak<-DimPlot(object = atac_pbmc_scatak, label = TRUE) + NoLegend() + ggtitle("scATAK")
+umap_cellranger<-DimPlot(object = atac_pbmc_cellranger, label = TRUE) + NoLegend() + ggtitle("Cell Ranger")
 
 ```
 
 
-# Show overlap statistics of cell clusters from scATAK and Cellranger 
+# Show similarity of cell clusters from scATAK and Cellranger 
 ```{r}
-library(WGCNA)
-table_overlap<-overlapTable(atac_pbmc_scatak@meta.data$seurat_clusters, atac_pbmc_cellranger@meta.data$seurat_clusters)
-
-p_overlap <- round(-log10(table_overlap$pTable), digits=4)
-p_overlap[is.infinite(p_overlap)] <- 100
-p_overlap[p_overlap>100] <- 100
 
 library(ggplot2)
 
-library(reshape2)
-
-p_data<-melt(p_overlap)
-colnames(p_data)<-c("scATAK", "Cell_Ranger", "p_value")
-p_data$scATAK<-as.factor(p_data$scATAK)
-p_data$Cell_Ranger<-as.factor(p_data$Cell_Ranger)
-figure2_p4<-ggplot(p_data, aes(scATAK, Cell_Ranger, fill =p_value)) + geom_tile() + scale_fill_gradient(low="white", high="red") + 
-  ggtitle("Overlap statistics of clustered cells")
-
-# Generate Figure2 panels A,B,C,D
-library(cowplot)
-plot_grid(figure2_p1, figure2_p4, labels=c("A", "B"), ncol=2) -> figure2_upper
-plot_grid(figure2_p2, figure2_p3, labels=c("C", "D"), ncol=2) -> figure2_middle
-plot_grid(figure2_upper, figure2_middle, nrow=2)              
+library(fossil)
+rand_index<-format(adj.rand.index(as.numeric(atac_pbmc_scatak$seurat_clusters), as.numeric(atac_pbmc_cellranger$seurat_clusters)), digits=3)
+cluster_info<-data.frame(scatak=as.numeric(as.character(atac_pbmc_scatak$seurat_clusters)), cellranger=as.numeric(as.character(atac_pbmc_cellranger$seurat_clusters)))
+cluster_cons<-cluster_info[cluster_info$scatak == cluster_info$cellranger, ]
+cell_count<-data.frame(total=table(cluster_info$scatak), cons=table(cluster_cons$scatak))
+cell_count$percent_cons<-cell_count$cons.Freq/cell_count$total.Freq*100
+cell_count$cluster<-cell_count$total.Var1
+figure2_p2<-ggplot(cell_count, aes(cluster, percent_cons)) + geom_bar(stat="identity", width=0.5) + ggtitle("Similarity of clustering (scATAK vs. Cell Ranger)") + theme(plot.title = element_text(size=16)) + ylab("% of conserved cells")
 
 ```
 
@@ -192,9 +183,9 @@ sig_genes<-c("IL7R", "CD8A", "MS4A1", "NCR1", "MS4A7", "ITGAM")
 
 atac_pbmc_scatak <- AddMetaData(atac_pbmc_scatak, gene_scatak.merge_sel[,sig_genes], sig_genes)
 
-figure2_p5<-VlnPlot(atac_pbmc_scatak, features = sig_genes, pt.size=0, ncol=2)
+figure2_p3<-VlnPlot(atac_pbmc_scatak, features = sig_genes, pt.size=0, ncol=2)
 
-figure2_p5
+figure2_p3
 
 ```
 
@@ -254,8 +245,11 @@ for (i in seq(0,9,1))
 
 atac_pbmc_scatak@meta.data = cbind(atac_pbmc_scatak@meta.data, tf_mtx)
 
-figure2_p6<-FeaturePlot(atac_pbmc_scatak, "MA0824.1_ID4", cols = c("white", "lightgrey", "red"))
-figure2_p6
+figure2_p4<-VlnPlot(atac_pbmc_scatak, features = "MA0824.1_ID4", pt.size = 0)
+
+#figure2_p4<-FeaturePlot(atac_pbmc_scatak, "MA0824.1_ID4", cols = c("white", "lightgrey", "red"))
+
+figure2_p4
 
 ```
 
@@ -267,6 +261,7 @@ new.cluster.ids <- c("Monocytes", "T-cells", "T-cells", "T-cells", "T-cells", "B
 names(new.cluster.ids) <- levels(atac_pbmc_scatak)
 atac_pbmc_scatak <- RenameIdents(atac_pbmc_scatak, new.cluster.ids)
 DimPlot(atac_pbmc_scatak, reduction = "umap", label = TRUE, pt.size = 0.5, label.size=6) + NoLegend()
+
 
 ```
 
@@ -282,11 +277,13 @@ write.table(bc_group, file= "./bc_group.txt", quote=F, row.names=F)
 
 # Generate Figure2
 ```{r}
-png("Figure2.png", width=800, height=900)
-plot_grid(figure2_p1, figure2_p4, labels=c("A", "B"), ncol=2, label_size = 20) -> figure2_upper
-plot_grid(figure2_p2, figure2_p3, labels=c("C", "D"), ncol=2, label_size = 20) -> figure2_middle
-plot_grid(figure2_p5, figure2_p6, labels=c("E", "F"), ncol=2, label_size = 20) -> figure2_bottom
-plot_grid(figure2_upper, figure2_middle, figure2_bottom, nrow=3)              
+
+library(cowplot)
+png("Figure2.png", width=800, height=600)
+plot_grid(figure2_p1, figure2_p2, labels=c("A", "B"), ncol=2, label_size = 20) -> figure2_upper
+plot_grid(figure2_p3, figure2_p4, labels=c("C", "D"), ncol=2, label_size = 20) -> figure2_bottom
+plot_grid(figure2_upper, figure2_bottom, nrow=2)              
 dev.off()
+
 ```
 

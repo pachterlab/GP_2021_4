@@ -1,6 +1,6 @@
 ### GP_2021_4
 #####
-#### This repository contains the codes to generate scATAK benchmarking figures.
+#### This repository contains the code to generate the scATAK preprint figures.
 ##### PBMC scATAC-seq benchmarking results [See details](PBMC/README.md)
 ##### Figure2
 ![Figure not found](Figure2.png)
